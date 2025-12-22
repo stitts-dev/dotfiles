@@ -1,0 +1,34 @@
+# GNU Stow ignore file
+# Files and directories to ignore when creating symlinks
+
+# Version control
+\.git
+\.gitignore
+\.gitmodules
+
+# Documentation
+README.*
+LICENSE.*
+CHANGELOG.*
+\.md$
+
+# Backup and temporary files
+.*~
+\.bak$
+\.tmp$
+\.swp$
+\.swo$
+
+# Setup and configuration
+setup\.sh
+install\.sh
+bootstrap\.sh
+
+# macOS specific
+\.DS_Store
+\.AppleDouble
+\.LSOverride
+
+# Editor specific
+\.vscode/
+\.idea/

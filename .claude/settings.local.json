@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(awk:*)",
+      "Bash(echo:*)",
+      "Bash(env)",
+      "Bash(test:*)",
+      "Bash(git config:*)",
+      "Bash(gh auth status:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "Bash(jira version:*)",
+      "Bash(security:*)",
+      "Bash(jira session:*)",
+      "Bash(source:*)",
+      "Bash(cc-jira:*)",
+      "Bash(jira-standup:*)",
+      "Bash(jira-search:*)",
+      "Bash(jira-quick -t view:*)",
+      "Bash(jql:*)",
+      "Bash(jira-help)",
+      "Bash(mdfind:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

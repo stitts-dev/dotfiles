@@ -1,0 +1,33 @@
+# Machine-specific settings (45KB accumulated permissions)
+settings.json
+
+# Session data
+history.jsonl
+session-log.txt
+stats-cache.json
+*.backup-*
+
+# Runtime directories
+debug/
+file-history/
+paste-cache/
+sessions/
+session-env/
+shell-snapshots/
+plans/
+todos/
+tasks/
+teams/
+projects/
+cache/
+ide/
+statsig/
+telemetry/
+usage-data/
+downloads/
+plugins/
+
+# OS artifacts
+.DS_Store
+.cursor/
+archive.zip

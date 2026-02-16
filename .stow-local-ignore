@@ -6,11 +6,10 @@
 \.gitignore
 \.gitmodules
 
-# Documentation
-README.*
-LICENSE.*
-CHANGELOG.*
-\.md$
+# Documentation (stow matches per path segment, so these block at any depth)
+^README\.
+^LICENSE\.
+^CHANGELOG\.
 
 # Backup and temporary files
 .*~

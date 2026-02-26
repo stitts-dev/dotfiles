@@ -31,3 +31,6 @@ bootstrap\.sh
 # Editor specific
 \.vscode/
 \.idea/
+
+# Sensitive files (not symlinked)
+\.npmrc

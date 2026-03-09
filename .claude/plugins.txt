@@ -1,0 +1,16 @@
+# Claude Code Plugins (user-scope)
+# Install with: claude plugins install <name> --scope user
+superpowers@claude-plugins-official
+hookify@claude-plugins-official
+context7@claude-plugins-official
+code-review@claude-plugins-official
+frontend-design@claude-plugins-official
+code-simplifier@claude-plugins-official
+claude-md-management@claude-plugins-official
+claude-code-setup@claude-plugins-official
+skill-creator@claude-plugins-official
+typescript-lsp@claude-plugins-official
+jdtls-lsp@claude-plugins-official
+github@claude-plugins-official
+coderabbit@claude-plugins-official
+feature-dev@claude-plugins-official

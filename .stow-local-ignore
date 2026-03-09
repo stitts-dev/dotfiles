@@ -34,3 +34,7 @@ bootstrap\.sh
 
 # Sensitive files (not symlinked)
 \.npmrc
+
+# Claude Code setup (consumed by script, not symlinked)
+setup-claude\.sh
+\.claude/settings\.json\.template

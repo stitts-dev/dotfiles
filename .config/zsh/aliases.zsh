@@ -9,6 +9,7 @@ alias zshconfig="nano ~/.zshrc"
 alias ohmyzsh="nano ~/.oh-my-zsh"
 
 # Directory navigation
+alias cdc="cd ~/Documents/repos/ilx-core"
 alias cdup1="cd ~/Documents/repos/ilx-core/unified-portal/ui"
 alias cdup2="cd ~/Documents/repos/ilx-core/unified-portal/xl"
 alias cdspw="cd ~/Documents/repos/ilx-core/ira-staff-portal-web"
@@ -20,6 +21,9 @@ alias cdrkad="cd ~/Documents/repos/ilx-core/ira-recordkeeper-admin"
 # Package manager shortcuts
 alias nr="npm run"
 alias pnr="pnpm run"
+
+# Claude Code
+alias claude-sync-plugins="bash ~/.claude/hooks/sync-plugins.sh"
 
 # ===== Alias Utilities =====
 

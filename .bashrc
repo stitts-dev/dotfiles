@@ -4,3 +4,6 @@ export PATH="/Users/jstittsworth/Documents/repos/irx-project-map/bin:$PATH"
 
 . "$HOME/.local/bin/env"
 . "$HOME/.cargo/env"
+
+# Added by claunch installer
+export PATH="$HOME/bin:$PATH"

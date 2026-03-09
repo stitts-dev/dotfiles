@@ -445,96 +445,159 @@ EOF
         return 0
     fi
 
-    echo "📊 Fetching Jira data..."
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 1: GIT COMMITS (PRIMARY EVIDENCE)
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo "🔍 Fetching git commits (primary evidence)..."
 
-    # Fetch yesterday's activity
-    local yesterday=$(jira issue list --jql "assignee=currentUser() AND updated >= -24h" --order-by updated --plain --no-headers --columns "KEY,SUMMARY,STATUS" 2>&1)
-    if [[ $? -ne 0 ]]; then
-        echo "❌ Error fetching yesterday's activity"
-        echo "   Error: $(echo $yesterday | head -1)"
-        return 1
-    fi
-
-    # Fetch current in-progress work
-    local in_progress=$(jira issue list --jql "assignee=currentUser() AND status IN ('In Development', 'Code Review', 'Deploy Review', 'Ready for QA', 'QA Testing')" --order-by priority --plain --no-headers --columns "KEY,SUMMARY,PRIORITY" 2>&1)
-
-    # Fetch blockers
-    local blockers=$(jira issue list --jql "assignee=currentUser() AND (status='Blocked' OR labels='blocked')" --order-by priority --plain --no-headers --columns "KEY,SUMMARY,PRIORITY" 2>&1)
-
-    # Handle "no results" for blockers gracefully
-    if echo "$blockers" | grep -q "No result found"; then
-        blockers="None"
-    fi
-
-    echo "📊 Fetching git commit context..."
-
-    # Fetch git commits from last 24 hours
     local git_commits=$(fetch_git_commits_24h "$test_mode" 2>&1)
     local git_fetch_status=$?
+    local commit_ticket_ids=""
+    local commit_tickets_context=""
 
     # Handle git fetch errors gracefully
     if [[ $git_fetch_status -ne 0 ]] || [[ "$git_commits" == *"not installed"* ]] || [[ "$git_commits" == *"not authenticated"* ]]; then
         echo "⚠️  $git_commits - continuing with Jira-only standup"
         git_commits="(Git commit context unavailable)"
-    elif [[ "$git_commits" == "No commits found in last 24 hours" ]]; then
+    elif [[ "$git_commits" == "No commits found"* ]]; then
         echo "ℹ️  No git commits found in last 24 hours"
+        git_commits="(No commits in last 24h)"
     else
-        local commit_count=$(echo "$git_commits" | wc -l | tr -d ' ')
+        local commit_count=$(echo "$git_commits" | grep -c '^' | tr -d ' ')
         echo "✅ Found $commit_count commit(s) from last 24 hours"
+
+        # Extract unique ticket IDs from commits
+        commit_ticket_ids=$(echo "$git_commits" | grep -oE '\[[A-Z]+-[0-9]+\]' | tr -d '[]' | sort -u | tr '\n' ',' | sed 's/,$//')
+
+        echo ""
+        echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+        echo "│ GIT COMMITS (PRIMARY EVIDENCE)                                              │"
+        echo "├─────────────────────────────────────────────────────────────────────────────┤"
+        echo "$git_commits" | sed 's/^/│   /'
+        echo "└─────────────────────────────────────────────────────────────────────────────┘"
     fi
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 2: JIRA CONTEXT FOR COMMITTED TICKETS
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo ""
+    echo "📊 Fetching Jira context..."
+
+    if [[ -n "$commit_ticket_ids" ]]; then
+        echo "   → Looking up tickets from commits: $commit_ticket_ids"
+        commit_tickets_context=$(jira issue list --jql "key IN ($commit_ticket_ids)" --order-by priority --plain --no-headers --columns "KEY,SUMMARY,STATUS,PRIORITY" 2>&1)
+
+        if echo "$commit_tickets_context" | grep -q "No result found"; then
+            commit_tickets_context="(No Jira tickets found for commit IDs)"
+        fi
+    else
+        commit_tickets_context="(No ticket IDs found in commits)"
+    fi
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 3: USER'S STATUS CHANGES (narrower than "updated")
+    # ═══════════════════════════════════════════════════════════════════════════
+    local user_status_changes=$(jira issue list --jql "assignee=currentUser() AND status CHANGED BY currentUser() AFTER -24h" --order-by updated --plain --no-headers --columns "KEY,SUMMARY,STATUS" 2>&1)
+
+    if echo "$user_status_changes" | grep -q "No result found"; then
+        user_status_changes="(No status changes by you in last 24h)"
+    fi
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STEP 4: IN-PROGRESS WORK & BLOCKERS
+    # ═══════════════════════════════════════════════════════════════════════════
+    local in_progress=$(jira issue list --jql "assignee=currentUser() AND status IN ('In Development', 'Code Review', 'Deploy Review', 'Ready for QA', 'QA Testing')" --order-by priority --plain --no-headers --columns "KEY,SUMMARY,PRIORITY" 2>&1)
+
+    if echo "$in_progress" | grep -q "No result found"; then
+        in_progress="(No tickets currently in progress)"
+    fi
+
+    local blockers=$(jira issue list --jql "assignee=currentUser() AND (status='Blocked' OR labels='blocked')" --order-by priority --plain --no-headers --columns "KEY,SUMMARY,PRIORITY" 2>&1)
+
+    if echo "$blockers" | grep -q "No result found"; then
+        blockers="None"
+    fi
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # DISPLAY COLLECTED DATA
+    # ═══════════════════════════════════════════════════════════════════════════
+    echo ""
+    echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+    echo "│ JIRA CONTEXT FOR COMMITTED TICKETS                                          │"
+    echo "├─────────────────────────────────────────────────────────────────────────────┤"
+    echo "$commit_tickets_context" | sed 's/^/│   /'
+    echo "├─────────────────────────────────────────────────────────────────────────────┤"
+    echo "│ YOUR STATUS CHANGES (last 24h):                                             │"
+    echo "$user_status_changes" | sed 's/^/│   /'
+    echo "├─────────────────────────────────────────────────────────────────────────────┤"
+    echo "│ IN-PROGRESS WORK:                                                           │"
+    echo "$in_progress" | sed 's/^/│   /'
+    echo "├─────────────────────────────────────────────────────────────────────────────┤"
+    echo "│ BLOCKERS:                                                                   │"
+    echo "$blockers" | sed 's/^/│   /'
+    echo "└─────────────────────────────────────────────────────────────────────────────┘"
+
+    echo ""
     echo "🤖 Generating AI summary with Haiku..."
+    echo ""
 
-    # Build Claude prompt with ticket data AND git context (using Haiku for speed/cost)
-    local ai_summary=$(claude --model haiku -p "Analyze this Jira standup data WITH git commit context to create an executive summary suitable for team communication.
+    # Build Claude prompt with git-first approach (using Haiku for speed/cost)
+    local ai_summary=$(claude --model haiku -p "Generate a standup summary. Git commits are the PRIMARY evidence of actual work.
 
-JIRA - YESTERDAY'S ACTIVITY (tickets updated in last 24h):
-$yesterday
-
-JIRA - IN-PROGRESS WORK (current active tickets):
-$in_progress
-
-JIRA - BLOCKERS:
-$blockers
-
-GIT COMMITS (Last 24 Hours - Actual Code Changes):
+═══════════════════════════════════════════════════════════════════════════════
+GIT COMMITS (PRIMARY EVIDENCE - Last 24 Hours):
 $git_commits
 
-CORRELATION INSTRUCTIONS:
-- Match git commits to Jira tickets by extracting ticket IDs from commit messages (e.g., [EX-1045] means commit is for ticket EX-1045)
-- Highlight tickets WITH git activity (proves active development, mention commit count)
-- Note tickets WITHOUT commits (may indicate planning/blocked/non-code work)
-- List commits marked [NO-TICKET] in separate 'Other Work' section (technical debt, docs, minor fixes)
-- Use commit messages to enrich ticket summaries with technical details
-- In executive summary, mention git activity stats (e.g., 'Completed 5 commits across 3 repos')
+JIRA CONTEXT FOR COMMITTED TICKETS:
+$commit_tickets_context
+
+YOUR JIRA STATUS CHANGES (tickets YOU transitioned in last 24h):
+$user_status_changes
+
+IN-PROGRESS WORK (current assignments):
+$in_progress
+
+BLOCKERS:
+$blockers
+═══════════════════════════════════════════════════════════════════════════════
+
+CRITICAL PRIORITY:
+1. GIT COMMITS are the PRIMARY evidence of actual work done
+2. Only report tickets that appear in git commits OR that you personally transitioned
+3. Do NOT include tickets that were merely 'updated' by others (QA, automation, managers)
+4. If a ticket has commits, that PROVES you worked on it - lead with these
+5. Status changes without commits = non-code work (planning, review, meetings)
+
+CORRELATION RULES:
+- [EX-1045] in commits → you coded on that ticket (mention commit count)
+- [NO-TICKET] commits → tech debt, docs, minor fixes (list in 'Other Work')
+- Ticket in status changes but NOT in commits → non-code activity (planning, review)
+- Use JIRA CONTEXT to get ticket summaries for committed work
 
 Generate output in this EXACT format:
 
 EXECUTIVE SUMMARY:
-[2-3 sentences highlighting key progress, current focus areas, git activity, and any concerns. Write in first person ('I worked on...', 'Currently focusing on...', 'Committed X changes...'). Mention commit stats if available.]
+[2-3 sentences. Lead with git commit stats (e.g., 'Committed X changes across Y repos'). Mention key tickets worked on. Write in first person.]
 
 YESTERDAY'S WORK (Grouped by Theme):
-- **Theme Name (TICKET-ID)**: Brief summary mentioning both Jira status AND git activity
-[Group related tickets by feature area like Distributions, Profile, Authentication, etc. Note which tickets have commits.]
+- **Theme Name (TICKET-ID)**: Brief summary with commit evidence
+[ONLY include tickets with git commits OR that you personally transitioned. Group by feature area.]
 
 CURRENT FOCUS (Grouped by Theme):
-- **Theme Name**: Brief summary of what you're working on
-[Group by priority and feature area]
+- **Theme Name**: What you're actively working on
+[From in-progress tickets, prioritize P0/P1]
 
 BLOCKERS:
-[List blockers or 'None at this time']
+[List or 'None at this time']
 
 OTHER WORK (if applicable):
-[List [NO-TICKET] commits here - docs, tech debt, minor fixes]
+[NO-TICKET commits - docs, tech debt, config changes]
 
 IMPORTANT:
-- Group tickets by logical themes (Distributions, Profile, Auth, Documents, etc.)
-- Correlate git commits with Jira tickets to show actual work vs planned work
-- Summarize ticket groups in prose, don't just list ticket IDs
-- Keep executive summary concise and suitable for managers/stakeholders
-- Highlight P1 priorities in current focus
-- Show git activity to prove progress
-- Return ONLY the formatted output, no additional commentary" 2>&1)
+- Lead with commit-backed work (provable progress)
+- Do NOT include tickets you didn't actually touch
+- Keep executive summary concise for managers
+- Return ONLY the formatted output, no commentary" 2>&1)
 
     local claude_exit_code=$?
 

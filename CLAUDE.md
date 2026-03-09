@@ -207,6 +207,31 @@ init_claude_project
 # - .claude/commands/prep-pr.md
 ```
 
+## Claude Code Setup (New Machine)
+
+To reproduce the full Claude Code AI configuration on another machine:
+
+```bash
+# 1. Clone dotfiles
+git clone <repo-url> ~/.dotfiles
+cd ~/.dotfiles
+
+# 2. Apply symlinks (agents, commands, hooks, skills, CLAUDE.md)
+stow --restow --target ~ .
+
+# 3. Bootstrap plugins, MCP servers, and merge settings
+bash setup-claude.sh
+
+# Dry run first to see what would change:
+bash setup-claude.sh --dry-run
+```
+
+The setup script is additive -- it merges config into existing settings without clobbering. Override the repos directory with `REPOS_DIR=/your/path bash setup-claude.sh`.
+
+**What gets synced**: 14 agents, 10 commands, 5 hooks, skills, CLAUDE.md, 12 plugins, MCP servers (github, filesystem), portable settings (env, hooks config, deny rules).
+
+**What stays machine-specific**: `permissions.allow` (accumulated grants), `mcpServers` (added by CLI), `enabledPlugins` (set by plugin install), `settings.local.json`.
+
 ## Dependencies
 
 ### Required

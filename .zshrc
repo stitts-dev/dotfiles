@@ -28,6 +28,9 @@
 # Task-master CLI aliases
 [[ -f ~/.config/zsh/taskmaster-aliases.zsh ]] && source ~/.config/zsh/taskmaster-aliases.zsh
 
+# Lattice collector functions (daily activity + weekly drafts)
+[[ -f ~/.config/zsh/lattice-functions.zsh ]] && source ~/.config/zsh/lattice-functions.zsh
+
 # Alias TUI (interactive alias browser)
 [[ -f ~/.config/zsh/alias-tui.zsh ]] && source ~/.config/zsh/alias-tui.zsh
 
@@ -69,3 +72,11 @@ wts() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-env-sync.sh" "$@"; }
 
 # === END WORKTREE ALIASES ===
 
+
+# Enable Claude Code LSP tool
+export ENABLE_LSP_TOOL=true
+export ENABLE_EXPERIMENTAL_MCP_CLI=true
+[ -f /opt/homebrew/etc/profile.d/autojump.sh ] && . /opt/homebrew/etc/profile.d/autojump.sh
+
+# Added by claunch installer
+export PATH="$HOME/bin:$PATH"

@@ -30,6 +30,7 @@ _TUI_ICONS[back]="←"              # arrow left
 _TUI_ICONS[cancel]="✕"            # x mark
 _TUI_ICONS[search]="🔍"           # magnifying glass
 _TUI_ICONS[customize]="🎨"        # customize icon
+_TUI_ICONS[scheduled]="⏱"         # scheduled task
 
 # ----- ANSI Code Utility -----
 
@@ -152,6 +153,7 @@ _tui_build_cache() {
     local in_heredoc=false
     local heredoc_delimiter=""
     local last_comment=""
+    local last_args_hint=""
 
     while IFS= read -r line || [[ -n "$line" ]]; do
       ((line_num++))
@@ -173,13 +175,21 @@ _tui_build_cache() {
         continue
       fi
 
-      # Track non-header comments for descriptions
+      # Track non-header comments for descriptions and usage hints
       # Match: # Some comment text (not ===== or ----- headers)
       if [[ "$line" =~ ^[[:space:]]*\#[[:space:]]+([^=\-].*)$ ]]; then
         local potential_comment="${match[1]}"
         # Skip if it looks like a header marker
         if [[ ! "$potential_comment" =~ ^[=\-]{3,} ]]; then
-          last_comment="$potential_comment"
+          # Check for usage patterns: Usage:, Args:, or contains [-flag] or <arg> patterns
+          if [[ "$potential_comment" =~ ^(Usage|Args|Arguments|Options):?[[:space:]]*(.*) ]]; then
+            last_args_hint="${match[2]}"
+          elif [[ "$potential_comment" =~ (\[-[a-zA-Z]|\<[a-zA-Z]) ]]; then
+            # Contains argument patterns like [-t] or <name>
+            last_args_hint="$potential_comment"
+          else
+            last_comment="$potential_comment"
+          fi
         fi
         # Don't continue - let it fall through to check for category/subcategory headers
       fi
@@ -192,6 +202,7 @@ _tui_build_cache() {
         [[ -z "$current_category" ]] && current_category="Uncategorized"
         current_subcategory=""
         last_comment=""  # Reset after category change
+        last_args_hint=""
         continue
       fi
 
@@ -199,6 +210,7 @@ _tui_build_cache() {
       if [[ "$line" == \#*-----*-----* ]]; then
         current_subcategory=$(echo "$line" | sed 's/^#[[:space:]]*-*[[:space:]]*//; s/[[:space:]]*-*[[:space:]]*$//')
         last_comment=""  # Reset after subcategory change
+        last_args_hint=""
         continue
       fi
 
@@ -252,9 +264,12 @@ _tui_build_cache() {
         # Use last_comment as description, or empty string
         local desc="${last_comment:-}"
         local escaped_desc=$(printf '%s' "$desc" | jq -Rsa .)
+        local args="${last_args_hint:-}"
+        local escaped_args=$(printf '%s' "$args" | jq -Rsa .)
 
-        items+=("{\"name\":\"$name\",\"type\":\"function\",\"command\":\"(function)\",\"description\":$escaped_desc,\"category\":\"$current_category\",\"subcategory\":\"$current_subcategory\",\"file\":\"$filename\",\"line\":$line_num}")
+        items+=("{\"name\":\"$name\",\"type\":\"function\",\"command\":\"(function)\",\"description\":$escaped_desc,\"args_hint\":$escaped_args,\"category\":\"$current_category\",\"subcategory\":\"$current_subcategory\",\"file\":\"$filename\",\"line\":$line_num}")
         last_comment=""  # Reset after capturing
+        last_args_hint=""
         continue
       fi
 
@@ -346,6 +361,94 @@ _tui_get_item_details() {
   jq -r --arg name "$name" '.[] | select(.name == $name) | @json' "$_TUI_CACHE"
 }
 
+# ----- Scheduled Tasks Banner -----
+
+# Display scheduled background tasks (LaunchAgents) as a banner
+_tui_scheduled_banner() {
+  local plist_dir="$HOME/Library/LaunchAgents"
+  local plists=("$plist_dir"/com.jstittsworth.*.plist(N))
+  [[ ${#plists[@]} -eq 0 ]] && return
+
+  local c_green=$'\e[32m'
+  local c_red=$'\e[31m'
+  local c_yellow=$'\e[33m'
+  local c_dim=$'\e[2m'
+  local c_reset=$'\e[0m'
+  local sched_icon="${_TUI_ICONS[scheduled]}"
+
+  local lines=()
+  lines+=("${sched_icon}  Scheduled Tasks")
+  lines+=("")
+
+  for plist in "${plists[@]}"; do
+    local label=$(basename "$plist" .plist)
+    local short_name="${label#com.jstittsworth.}"
+
+    # Check launchctl status
+    local dot
+    if launchctl list 2>/dev/null | grep -q "$label"; then
+      local exit_code=$(launchctl list 2>/dev/null | grep "$label" | awk '{print $2}')
+      if [[ "$exit_code" == "0" || "$exit_code" == "-" ]]; then
+        dot="${c_green}●${c_reset}"
+      else
+        dot="${c_red}●${c_reset}"
+      fi
+    else
+      dot="${c_yellow}●${c_reset}"
+    fi
+
+    # Parse schedule from plist
+    local schedule=""
+    if grep -q "StartCalendarInterval" "$plist" 2>/dev/null; then
+      local hour=$(grep -A1 "<key>Hour</key>" "$plist" | grep integer | head -1 | sed 's/.*<integer>\(.*\)<\/integer>.*/\1/')
+      local weekdays=$(grep -A1 "<key>Weekday</key>" "$plist" | grep integer | sed 's/.*<integer>\(.*\)<\/integer>.*/\1/' | tr '\n' ',' | sed 's/,$//')
+      if [[ -n "$hour" ]]; then
+        local day_names=""
+        case "$weekdays" in
+          1,2,3,4,5) day_names="Mon-Fri" ;;
+          *) day_names="Days: $weekdays" ;;
+        esac
+        schedule="${day_names} $(printf '%02d:00' "$hour")"
+      fi
+    fi
+
+    # Find last run (newest daily file for lattice, generic log check otherwise)
+    local last_run=""
+    case "$short_name" in
+      lattice-daily)
+        local latest=$(ls -t "$HOME/Documents/lattice-updates/daily/"*.md 2>/dev/null | head -1)
+        if [[ -n "$latest" ]]; then
+          local fname=$(basename "$latest" .md)
+          if [[ "$fname" == "$(date +%Y-%m-%d)" ]]; then
+            last_run="Last: ${fname} (today)"
+          else
+            last_run="Last: ${fname}"
+          fi
+        fi
+        ;;
+      *)
+        last_run=""
+        ;;
+    esac
+
+    lines+=("${dot} ${short_name}    ${c_dim}${schedule}${c_reset}")
+    [[ -n "$last_run" ]] && lines+=("  ${c_dim}${last_run}${c_reset}")
+  done
+
+  local banner_text=""
+  for line in "${lines[@]}"; do
+    if [[ -z "$banner_text" ]]; then
+      banner_text="$line"
+    else
+      banner_text="${banner_text}
+${line}"
+    fi
+  done
+
+  gum style --border rounded --padding "1 2" --border-foreground "240" "$banner_text"
+  echo ""
+}
+
 # ----- Main TUI Functions -----
 
 # Main TUI entry point
@@ -370,6 +473,9 @@ tui() {
 
   # Navigation loop - Escape goes back to category selection
   while true; do
+    # Show scheduled tasks banner
+    _tui_scheduled_banner
+
     # Category selection
     categories=$(_tui_get_categories)
     local search_opt="\e[38;5;212m${search_icon}\e[0m  Search All..."
@@ -425,6 +531,7 @@ tui() {
     local item_type=$(echo "$details" | jq -r '.type')
     local item_command=$(echo "$details" | jq -r '.command')
     local item_description=$(echo "$details" | jq -r '.description // ""')
+    local item_args_hint=$(echo "$details" | jq -r '.args_hint // ""')
     local item_file=$(echo "$details" | jq -r '.file')
     local item_line=$(echo "$details" | jq -r '.line')
     local item_category=$(echo "$details" | jq -r '.category')
@@ -458,6 +565,11 @@ ${_TUI_ICONS[$item_type]}  $item_type
 
 Command:
 $item_command"
+    elif [[ -n "$item_args_hint" ]]; then
+      detail_text="$detail_text
+
+Args:
+$item_args_hint"
     fi
 
     echo ""
@@ -481,7 +593,8 @@ $item_command"
 
     case "$action" in
       *Execute*)
-        local args=$(gum input --placeholder "Arguments (optional)" --width=50)
+        local placeholder="${item_args_hint:-Arguments (optional)}"
+        local args=$(gum input --placeholder "$placeholder" --width=50)
         echo "Executing: $item_name $args"
         echo ""
         eval "$item_name $args"
@@ -547,6 +660,7 @@ tui_search() {
   local item_type=$(echo "$details" | jq -r '.type')
   local item_command=$(echo "$details" | jq -r '.command')
   local item_description=$(echo "$details" | jq -r '.description // ""')
+  local item_args_hint=$(echo "$details" | jq -r '.args_hint // ""')
   local item_file=$(echo "$details" | jq -r '.file')
   local item_line=$(echo "$details" | jq -r '.line')
   local item_category=$(echo "$details" | jq -r '.category')
@@ -574,6 +688,11 @@ ${_TUI_ICONS[$item_type]}  $item_type
 
 Command:
 $item_command"
+  elif [[ -n "$item_args_hint" ]]; then
+    detail_text="$detail_text
+
+Args:
+$item_args_hint"
   fi
 
   echo ""
@@ -596,7 +715,8 @@ $item_command"
 
   case "$action" in
     *Execute*)
-      local args=$(gum input --placeholder "Arguments (optional)" --width=50)
+      local placeholder="${item_args_hint:-Arguments (optional)}"
+      local args=$(gum input --placeholder "$placeholder" --width=50)
       echo "Executing: $item_name $args"
       echo ""
       eval "$item_name $args"

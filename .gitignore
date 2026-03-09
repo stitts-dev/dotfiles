@@ -1,2 +1,5 @@
 # Sensitive files
 .npmrc
+
+# OS
+.DS_Store

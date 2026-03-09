@@ -27,5 +27,11 @@ if [ -f "/opt/homebrew/opt/asdf/libexec/asdf.sh" ]; then
   . /opt/homebrew/opt/asdf/libexec/asdf.sh
 fi
 
+# AWS Connect dev environment
+export AWS_PROFILE=585768164488_IRX-Admin
+export AWS_REGION=us-west-2
+export AWS_DEFAULT_REGION=us-west-2
+export CLAUDE_CODE_MAX_OUTPUT_TOKENS=50000
+
 # Jira API Token (stored in macOS keychain - service: jira-cli, account: jstittsworth@iralogix.com)
 # jira-cli will automatically retrieve from keychain

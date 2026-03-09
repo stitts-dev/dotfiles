@@ -20,6 +20,39 @@ Extract actionable learnings from Claude Code sessions and persist them in skill
 - At the end of a productive session
 - When a code review identifies missed patterns
 
+## Full Learning Workflow
+
+### Pre-Task
+
+- Run `/query-skills [task-description]` to discover relevant skills
+- Review known failures before starting
+- Apply established patterns where applicable
+
+### During-Task
+
+- Note significant decisions and their outcomes
+- Capture working configurations immediately
+- Document failures as they occur
+
+### Post-Task
+
+- Run `/retrospective` to trigger the process below
+- Update skills with new patterns discovered
+- Log failures with `failure-tracker` skill
+- Use `@agentic-documenter` for complex learnings
+
+### Key Commands
+
+- `/query-skills [task]` - Discover relevant skills and known patterns
+- `/retrospective` - Extract learnings and update skills
+- `/review` - Comprehensive end-of-session review
+
+### Skill Locations
+
+- `~/.claude/skills/` - Global user skills
+- `.claude/skills/` - Project-specific skills
+- Plugins with skills - Installed via marketplace
+
 ## Process
 
 ### Step 1: Analyze Session

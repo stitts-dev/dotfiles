@@ -1192,6 +1192,7 @@ test_all_functions() {
 # ===== Self-Healing Function System =====
 
 # Meta-function to diagnose and fix function issues
+# Usage: fix_function <func_name> [error description] or fix_function -f <name> -e <error>
 fix_function() {
     local test_mode=false
     local function_name=""
@@ -1242,8 +1243,20 @@ fix_function() {
                 return 0
                 ;;
             *)
-                echo "Unknown option: $1"
-                return 1
+                # Allow first positional arg as function name (UX improvement)
+                if [[ -z "$function_name" && "$1" != -* ]]; then
+                    function_name="$1"
+                    shift
+                    # Capture remaining non-flag args as error message
+                    if [[ $# -gt 0 && "$1" != -* ]]; then
+                        error_message="$*"
+                        break
+                    fi
+                else
+                    echo "Unknown option: $1"
+                    echo "Use -h for help"
+                    return 1
+                fi
                 ;;
         esac
     done
@@ -1254,31 +1267,46 @@ fix_function() {
         return 1
     fi
 
-    echo "=== Function Diagnosis & Repair System ==="
-    echo "Function: $function_name"
-    echo "Error: $error_message"
-    echo "Usage: $usage_example"
-    echo "Expected: $expected_behavior"
-    echo "Actual: $actual_behavior"
-    echo
+    # Find the function's source file in dotfiles
+    local func_file=$(grep -rl "^${function_name}()" ~/.dotfiles/.config/zsh/ 2>/dev/null | head -1)
 
-    # Analyze the problem and generate fixes
-    local diagnosis_result
-    diagnosis_result=$(diagnose_function_issue "$function_name" "$error_message" "$usage_example" "$expected_behavior" "$actual_behavior" "$test_mode")
-
-    echo "$diagnosis_result"
-
-    # Apply fixes if not in test mode
-    if [[ "$test_mode" != true ]]; then
-        local fix_status=$(echo "$diagnosis_result" | jq -r '.fix_status' 2>/dev/null)
-        if [[ "$fix_status" == "applicable" ]]; then
-            echo
-            read -p "Apply suggested fixes? (y/n): " apply_choice
-            if [[ "$apply_choice" == "y" ]]; then
-                apply_function_fixes "$diagnosis_result"
-            fi
-        fi
+    if [[ -z "$func_file" ]]; then
+        echo "Could not find function '$function_name' in ~/.dotfiles/.config/zsh/"
+        return 1
     fi
+
+    # Get line number where function starts
+    local func_line=$(grep -n "^${function_name}()" "$func_file" | cut -d: -f1 | head -1)
+
+    # Build the task description for Claude
+    local task="Fix the '$function_name' function in $func_file:$func_line
+
+Issue: $error_message"
+
+    [[ -n "$usage_example" ]] && task="$task
+Usage that failed: $usage_example"
+
+    [[ -n "$expected_behavior" ]] && task="$task
+Expected: $expected_behavior"
+
+    [[ -n "$actual_behavior" ]] && task="$task
+Actual: $actual_behavior"
+
+    if [[ "$test_mode" == true ]]; then
+        echo "=== Test Mode - Would start Claude Code session ==="
+        echo "Directory: ~/.dotfiles"
+        echo "Task:"
+        echo "$task"
+        return 0
+    fi
+
+    # Start Claude Code in dotfiles directory with the task
+    echo "Starting Claude Code session in ~/.dotfiles..."
+    echo "Task: $task"
+    echo ""
+
+    # Use subshell to cd without affecting caller, then start Claude
+    (cd ~/.dotfiles && claude "$task")
 }
 
 # Core diagnosis engine
@@ -1640,6 +1668,7 @@ start-rk-custom() {
 
 # Summarize open PRs in markdown format for Claude processing
 # Uses -R flag to query specific repos - works from anywhere
+# Usage: gprsum [-t]
 gprsum() {
     local test_mode=false
     [[ "$1" == "-t" ]] && test_mode=true && shift
@@ -1659,6 +1688,13 @@ gprsum() {
 - **Status:** MERGEABLE | CI: PASSING | Review: APPROVED
 - **Changes:** 5 files (+100, -50)
 - **URL:** https://github.com/iralogix/unified-portal/pull/123
+
+## PR #456: Another PR [MERGE CONFLICT]
+- **Repo:** iralogix/unified-portal
+- **Branch:** feature/conflict -> develop
+- **Status:** **CONFLICTING** | CI: PASSING | Review: PENDING
+- **Changes:** 3 files (+20, -10)
+- **URL:** https://github.com/iralogix/unified-portal/pull/456
 EOF
         return 0
     fi
@@ -1674,11 +1710,23 @@ EOF
             --json number,title,headRefName,baseRefName,mergeable,reviewDecision,statusCheckRollup,additions,deletions,changedFiles,url 2>/dev/null)
 
         if [[ -n "$prs" && "$prs" != "[]" ]]; then
+            # Check for merge conflicts and warn
+            local conflict_count=$(echo "$prs" | jq '[.[] | select(.mergeable == "CONFLICTING")] | length')
+            if [[ "$conflict_count" -gt 0 ]]; then
+                echo "## WARNING: $conflict_count PR(s) have merge conflicts!"
+                echo ""
+            fi
+
             echo "$prs" | jq -r --arg repo "$repo" '.[] |
-                "## PR #\(.number): \(.title)\n" +
+                (if .mergeable == "CONFLICTING" then "## PR #\(.number): \(.title) [MERGE CONFLICT]\n" else "## PR #\(.number): \(.title)\n" end) +
                 "- **Repo:** \($repo)\n" +
                 "- **Branch:** \(.headRefName) -> \(.baseRefName)\n" +
-                "- **Status:** \(.mergeable // "UNKNOWN") | CI: \(
+                "- **Status:** \(
+                    if .mergeable == "CONFLICTING" then "**CONFLICTING**"
+                    elif .mergeable == "MERGEABLE" then "MERGEABLE"
+                    else .mergeable // "UNKNOWN"
+                    end
+                ) | CI: \(
                     if .statusCheckRollup == null or (.statusCheckRollup | length) == 0 then "NONE"
                     elif (.statusCheckRollup | all(.conclusion == "SUCCESS")) then "PASSING"
                     elif (.statusCheckRollup | any(.conclusion == "FAILURE")) then "FAILING"

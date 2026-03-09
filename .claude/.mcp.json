@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp", "/Users/jstittsworth/Documents/obsidian-kb"]
+    }
+  }
+}

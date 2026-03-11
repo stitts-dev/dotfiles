@@ -1,16 +1,22 @@
-# Claude Code Plugins (user-scope)
-# Install with: claude plugins install <name> --scope user
-superpowers@claude-plugins-official
-hookify@claude-plugins-official
-context7@claude-plugins-official
-code-review@claude-plugins-official
-frontend-design@claude-plugins-official
-code-simplifier@claude-plugins-official
-claude-md-management@claude-plugins-official
-claude-code-setup@claude-plugins-official
-skill-creator@claude-plugins-official
-typescript-lsp@claude-plugins-official
-jdtls-lsp@claude-plugins-official
-github@claude-plugins-official
-coderabbit@claude-plugins-official
-feature-dev@claude-plugins-official
+# stitts-plugins (fork of claude-plugins-official)
+superpowers@stitts-plugins
+hookify@stitts-plugins
+context7@stitts-plugins
+frontend-design@stitts-plugins
+code-simplifier@stitts-plugins
+claude-md-management@stitts-plugins
+claude-code-setup@stitts-plugins
+rust-analyzer-lsp@stitts-plugins
+playwright@stitts-plugins
+code-review@stitts-plugins
+skill-creator@stitts-plugins
+typescript-lsp@stitts-plugins
+jdtls-lsp@stitts-plugins
+feature-dev@stitts-plugins
+
+# awesome-claude-code-plugins (community)
+ai-engineer@awesome-claude-code-plugins
+brand-guardian@awesome-claude-code-plugins
+ceo-quality-controller-agent@awesome-claude-code-plugins
+commit@awesome-claude-code-plugins
+frontend-developer@awesome-claude-code-plugins

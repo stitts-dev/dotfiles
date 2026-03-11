@@ -1,5 +1,9 @@
 # Global Standards
 
+## Coding Principles
+
+- Avoid writing scripts to complete tasks - find proper solution
+
 ## Test Execution
 
 - NEVER run tests directly in the main context -- delegate to a testing subagent to avoid context bloat

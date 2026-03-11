@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 CLAUDE_DIR="$HOME/.claude"
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 TEMPLATE_FILE="$DOTFILES_DIR/.claude/settings.json.template"
@@ -88,10 +88,23 @@ done
 info "Symlinked agents: $AGENTS_COUNT | commands: $COMMANDS_COUNT"
 
 # ─── Step 2: Install plugins ─────────────────────────────────────────
-step "Step 2: Installing plugins"
+step "Step 2: Registering marketplaces & installing plugins"
 
 if $SKIP_CLAUDE; then
   warn "Skipping plugins (claude CLI not available)"
+else
+  # Register stitts-plugins marketplace (personal fork of claude-plugins-official)
+  if $DRY_RUN; then
+    info "Would register marketplace: stitts-plugins (stitts-dev/claude-plugins-official)"
+  else
+    claude marketplace add stitts-plugins --source github --repo stitts-dev/claude-plugins-official 2>/dev/null \
+      && ok "Registered marketplace: stitts-plugins" \
+      || info "Marketplace stitts-plugins already registered"
+  fi
+fi
+
+if $SKIP_CLAUDE; then
+  : # already warned above
 elif [[ ! -f "$PLUGINS_FILE" ]]; then
   warn "No plugins.txt found at $PLUGINS_FILE — skipping"
 else

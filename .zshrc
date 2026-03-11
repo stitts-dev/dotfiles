@@ -43,33 +43,17 @@ load_api_keys() {
 load_api_keys
 
 # === WORKTREE MANAGEMENT ALIASES ===
-# Unified Portal worktree management
-# Added by: /Users/jstittsworth/Documents/repos/ilx-core/unified-portal/scripts/worktree/setup-aliases.sh
-# See: /Users/jstittsworth/Documents/repos/ilx-core/unified-portal/scripts/worktree/README.md for usage
-
-export UNIFIED_PORTAL_ROOT="/Users/jstittsworth/Documents/repos/ilx-core/unified-portal"
-
-# Quick switch (cd to worktree)
-wt() { source "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$@"; }
-
-# Open in Cursor
-wtc() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$1" --cursor; }
-
-# Open in tmux session
-wtt() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$1" --tmux; }
-
-# List all worktrees
-wtl() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-list.sh" "$@"; }
-
-# Create new worktree
-wtn() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-create.sh" "$@"; }
-
-# Remove worktree
-wtr() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-remove.sh" "$@"; }
-
-# Sync .env symlinks
-wts() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-env-sync.sh" "$@"; }
-
+# Unified Portal worktree management (work machine only)
+if [[ -d "/Users/jstittsworth/Documents/repos/ilx-core/unified-portal" ]]; then
+  export UNIFIED_PORTAL_ROOT="/Users/jstittsworth/Documents/repos/ilx-core/unified-portal"
+  wt()  { source "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$@"; }
+  wtc() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$1" --cursor; }
+  wtt() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-switch.sh" "$1" --tmux; }
+  wtl() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-list.sh" "$@"; }
+  wtn() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-create.sh" "$@"; }
+  wtr() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-remove.sh" "$@"; }
+  wts() { "$UNIFIED_PORTAL_ROOT/scripts/worktree/wt-env-sync.sh" "$@"; }
+fi
 # === END WORKTREE ALIASES ===
 
 
@@ -80,3 +64,4 @@ export ENABLE_EXPERIMENTAL_MCP_CLI=true
 
 # Added by claunch installer
 export PATH="$HOME/bin:$PATH"
+# $HOME/.local/bin is set in env.zsh

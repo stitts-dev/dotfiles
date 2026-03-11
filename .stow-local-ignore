@@ -38,3 +38,11 @@ bootstrap\.sh
 # Claude Code setup (consumed by script, not symlinked)
 setup-claude\.sh
 \.claude/settings\.json\.template
+
+# Machine-specific files (archived, not symlinked)
+\.gitconfig
+\.claude/settings\.local\.json
+\.claude/\.mcp\.json
+
+# Archive directory
+archive/

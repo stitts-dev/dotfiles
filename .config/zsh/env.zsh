@@ -3,6 +3,12 @@
 # Oh My Zsh configuration
 export ZSH="$HOME/.oh-my-zsh"
 
+# Local bin (claude CLI, pip --user, etc.)
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
 # PNPM configuration
 export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in

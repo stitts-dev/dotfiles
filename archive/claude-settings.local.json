@@ -22,9 +22,17 @@
       "Bash(jira-quick -t view:*)",
       "Bash(jql:*)",
       "Bash(jira-help)",
-      "Bash(mdfind:*)"
+      "Bash(mdfind:*)",
+      "Bash(wc:*)",
+      "Bash(file:*)",
+      "Bash(du:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/stitts.dev/.claude",
+      "/Users/stitts.dev/voxren/"
+    ]
   }
 }

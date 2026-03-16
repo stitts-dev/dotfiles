@@ -12,5 +12,12 @@
       ".mjs": "javascript",
       ".cjs": "javascript"
     }
+  },
+  "rust": {
+    "command": "rust-analyzer",
+    "args": [],
+    "extensionToLanguage": {
+      ".rs": "rust"
+    }
   }
 }

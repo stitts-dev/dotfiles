@@ -1,17 +1,19 @@
 ---
 name: obsidian-kb
-description: Obsidian Engineering Knowledge Base — search, read, and write to the IraLogix vault before answering architecture/domain questions
+description: Obsidian Engineering Knowledge Base — search, read, and write to a configured vault before answering architecture/domain questions
 ---
 
 # Obsidian Engineering Knowledge Base
 
-The Obsidian vault at `~/Documents/obsidian-kb/` is the canonical second brain for IraLogix engineering knowledge. Use the `obsidian` MCP server tools to interact with it.
+The Obsidian vault is the canonical second brain for engineering knowledge. Use the `obsidian` MCP server tools to interact with it.
+
+**Vault location:** Set `$OBSIDIAN_VAULT_PATH` in your environment (defaults to `~/Documents/obsidian-kb/`).
 
 ## When to Search the Vault
 
 **Before answering questions about:**
 - Architecture (services, data flows, infrastructure)
-- Domain concepts (IRA terminology, business rules)
+- Domain concepts (business rules, terminology)
 - Debugging / known issues
 - Previous session context
 
@@ -79,7 +81,7 @@ Templates in `99-meta/templates/` — use the appropriate template when creating
   services/        — Per-service documentation
   data/            — Data layer docs
   infrastructure/  — Infrastructure (AWS, observability)
-30-domain/         — IRA domain concepts
+30-domain/         — Domain concepts
 40-decisions/      — Architecture Decision Records (ADRs)
 50-playbooks/      — Debugging and operational playbooks
   debugging/       — Diagnosis guides

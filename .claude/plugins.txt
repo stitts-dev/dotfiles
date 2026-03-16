@@ -20,3 +20,5 @@ brand-guardian@awesome-claude-code-plugins
 ceo-quality-controller-agent@awesome-claude-code-plugins
 commit@awesome-claude-code-plugins
 frontend-developer@awesome-claude-code-plugins
+commit-commands@stitts-plugins
+double-check@awesome-claude-code-plugins

@@ -228,7 +228,7 @@ bash setup-claude.sh --dry-run
 
 The setup script is additive -- it merges config into existing settings without clobbering. Override the repos directory with `REPOS_DIR=/your/path bash setup-claude.sh`.
 
-**What gets synced**: 14 agents, 10 commands, 5 hooks, skills, CLAUDE.md, 12 plugins, MCP servers (github, filesystem), portable settings (env, hooks config, deny rules).
+**What gets synced**: 21 agents, 11 commands, 9 hooks, 17 skills, 3 scripts, CLAUDE.md, 12 plugins, MCP servers (github, filesystem), portable settings (env, hooks config, deny rules).
 
 **What stays machine-specific**: `permissions.allow` (accumulated grants), `mcpServers` (added by CLI), `enabledPlugins` (set by plugin install), `settings.local.json`.
 

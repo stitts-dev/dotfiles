@@ -12,6 +12,16 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/sync-check.sh",
             "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/plan-tab-title.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/worktree-status.sh",
+            "timeout": 10000
           }
         ]
       }
@@ -24,6 +34,26 @@
             "type": "command",
             "command": "bash ~/.claude/hooks/commit-format-reminder.sh",
             "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/enforce-builtin-tools.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/worktree-gate.sh",
+            "timeout": 10000
           }
         ]
       }
